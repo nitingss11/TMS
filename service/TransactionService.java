@@ -69,15 +69,13 @@ public class TransactionService {
 
         acc.getLock().lock();
 
-        if (cashType == TransactionType.CASH_DEBIT) {
-            try {
-                runValidators(txn);
-            } catch (TransactionException ex) {
-                txn.setProcessedAt(Instant.now());
-                txn.markFailed(ex.getMessage());
-                acc.getLock().unlock();
-                return txn;
-            }
+        try {
+            runValidators(txn);
+        } catch (TransactionException ex) {
+            txn.setProcessedAt(Instant.now());
+            txn.markFailed(ex.getMessage());
+            acc.getLock().unlock();
+            return txn;
         }
 
         try {
