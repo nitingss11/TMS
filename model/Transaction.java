@@ -11,6 +11,7 @@ public abstract class Transaction {
     private final BigDecimal amount;
     private TransactionStatus status = TransactionStatus.PENDING;
     private final Instant createdAt = Instant.now();
+    private String failureReason = "";
 
     protected Transaction(TransactionType type, BigDecimal amount) {
         this.type   = type;
@@ -36,5 +37,15 @@ public abstract class Transaction {
     public void markCompleted() {
         status = TransactionStatus.COMPLETED;
     }
+
+    public void markFailed(String reason) {
+        status = TransactionStatus.FAILED;
+        failureReason = reason;
+    }
+
+    public String getFailureReason() { 
+        return failureReason; 
+    }
+
 
 }
