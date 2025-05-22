@@ -1,6 +1,7 @@
 import java.math.BigDecimal;
 
 import config.TransactionConfig;
+import model.AccountType;
 import model.TransactionType;
 import service.AccountService;
 import service.TransactionService;
@@ -18,10 +19,10 @@ public class Main {
         System.out.println("**************************************");
         // Account transfer (OK)
         var t1 = txnSvc.transfer(person1, person2, new BigDecimal("250.00"));
-        System.out.println("Account transfer status: " + t1.getStatus());
+        System.out.println("Account transfer status: " + t1.getStatus() + " | processed At " + t1.getProcessedAt() );
 
         // Cash deposit (OK)
-        var c1 = txnSvc.cash(person1, TransactionType.CASH_CREDIT, new BigDecimal("300.00"));
+        var c1 = txnSvc.cash(person1, TransactionType.CASH_CREDIT, new BigDecimal("20000.00"));
         System.out.println("Cash deposit status:  " + c1.getStatus());
 
         // balances
@@ -50,5 +51,24 @@ public class Main {
         System.out.println("person2: " + person2.getBalance());
         System.out.println("**************************************");
 
+        System.out.println("**************************************");
+        var person3 = accSvc.create(new BigDecimal("1000.00"));
+        var person4   = accSvc.create(new BigDecimal("25000.00"), AccountType.TypeB);
+
+        //Credit any amount should work
+        var t4 = txnSvc.cash(person3, TransactionType.CASH_CREDIT, new BigDecimal("15000.00"));
+        System.out.println("cash credit status: " + t4.getStatus());
+
+        //Debit more than TypeA limit should fail
+        var t5 = txnSvc.cash(person3, TransactionType.CASH_DEBIT, new BigDecimal("15000.00"));
+        System.out.println("cash debit status over TypeA limit: " + t5.getStatus()
+                            + " | reason: " + t5.getFailureReason());
+
+        //Debit more than TypeA limit but less than TypeB limit should pass
+        var t6 = txnSvc.cash(person4, TransactionType.CASH_DEBIT, new BigDecimal("15000.00"));
+        System.out.println("cash debit status over TypeA but less than TypeB limit: " + t6.getStatus());
+
+        System.out.println("person3: " + person3.getBalance());
+        System.out.println("person4: " + person4.getBalance());
     }
 }

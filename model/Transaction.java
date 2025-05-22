@@ -11,6 +11,8 @@ public abstract class Transaction {
     private final BigDecimal amount;
     private TransactionStatus status = TransactionStatus.PENDING;
     private final Instant createdAt = Instant.now();
+    private Instant processedAt;
+
     private String failureReason = "";
 
     protected Transaction(TransactionType type, BigDecimal amount) {
@@ -47,5 +49,16 @@ public abstract class Transaction {
         return failureReason; 
     }
 
+    public Instant getCreatedAt() {
+        return this.createdAt;
+    }
+    
+    public Instant getProcessedAt() {
+        return this.processedAt;
+    }
+
+    public void setProcessedAt(Instant time) {
+        this.processedAt = time;
+    }
 
 }

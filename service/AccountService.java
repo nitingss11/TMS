@@ -1,6 +1,8 @@
 package service;
 
 import model.Account;
+import model.AccountType;
+
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
@@ -10,7 +12,11 @@ public class AccountService {
     private final Map<UUID, Account> store = new ConcurrentHashMap<>();
 
     public Account create(BigDecimal openingBalance) {
-        Account acc = new Account(openingBalance);
+        return create(openingBalance, AccountType.TypeA);
+    }
+
+    public Account create(BigDecimal openingBalance, AccountType type) {
+        Account acc = new Account(openingBalance, type);
         store.put(acc.getId(), acc);
         return acc;
     }

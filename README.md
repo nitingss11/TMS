@@ -30,3 +30,12 @@ Extra FR
 2. Transaction Categorization
 3. Currency Conversion
 4. Test Cases
+
+Account - TypeA, TypeB
+TypeA - txnLimit - 10000
+TypeB - txnLimit - 20000
+
+
+AccountType - enum {TypeA, TypeB}
+
+Account class - property AccountType

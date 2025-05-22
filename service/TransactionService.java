@@ -12,6 +12,7 @@ import config.TransactionConfig;
 import exception.TransactionException;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 
@@ -31,25 +32,29 @@ public class TransactionService {
 
         TransferTransaction txn = new TransferTransaction(from, to, amount);
 
-        //Validation
-        try {
-            runValidators(txn);
-        } catch (TransactionException ex) {
-            txn.markFailed(ex.getMessage());
-            return txn;
-        }
-
         //acquire locks in ascending UUID order to avoid deadlock
         List<Account> ordered = from.getId().compareTo(to.getId()) < 0
-                                ? List.of(from, to)
-                                : List.of(to, from);
+        ? List.of(from, to)
+        : List.of(to, from);
 
         ordered.get(0).getLock().lock();
         ordered.get(1).getLock().lock();
 
+        //Validation
+        try {
+            runValidators(txn);
+        } catch (TransactionException ex) {
+            txn.setProcessedAt(Instant.now());
+            txn.markFailed(ex.getMessage());
+            ordered.get(1).getLock().unlock();
+            ordered.get(0).getLock().unlock();
+            return txn;
+        }
+
         try {
             from.debit(amount);
             to.credit(amount);
+            txn.setProcessedAt(Instant.now());
             txn.markCompleted();
         } finally {
             ordered.get(1).getLock().unlock();
@@ -62,20 +67,26 @@ public class TransactionService {
 
         CashTransaction txn = new CashTransaction(acc, cashType, amount);
 
-        try {
-            runValidators(txn);
-        } catch (TransactionException ex) {
-            txn.markFailed(ex.getMessage());
-            return txn;
+        acc.getLock().lock();
+
+        if (cashType == TransactionType.CASH_DEBIT) {
+            try {
+                runValidators(txn);
+            } catch (TransactionException ex) {
+                txn.setProcessedAt(Instant.now());
+                txn.markFailed(ex.getMessage());
+                acc.getLock().unlock();
+                return txn;
+            }
         }
 
-        acc.getLock().lock();
         try {
             if (cashType == TransactionType.CASH_CREDIT) {
                 acc.credit(amount);
             } else {
                 acc.debit(amount);
             }
+            txn.setProcessedAt(Instant.now());
             txn.markCompleted();
         } finally {
             acc.getLock().unlock();
